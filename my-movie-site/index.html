@@ -8,22 +8,48 @@
 </head>
 <body>
 
-  <!-- ФИКСИРОВАННЫЙ ХЕДЕР -->
-  <header class="header">
-    <h1>Фильмы</h1>
-    <div class="cart-icon-header" onclick="showBasket()">
-      <span>🛒</span>
-      <span id="cart-count">0</span>
-    </div>
-  </header>
+  <!-- ===== АВТОРИЗАЦИЯ ===== -->
+  <div id="auth" class="auth-container">
+    <h2 id="auth-title">Вход</h2>
 
-  <main class="app">
-    <div id="content" class="movies-grid"></div>
-  </main>
+    <input type="text" id="username" placeholder="Логин">
+    <input type="password" id="password" placeholder="Пароль">
 
-  <footer class="footer">
-    <p>© 2025 My Movie Site</p>
-  </footer>
+    <button onclick="login()">Продолжить</button>
+
+    <p id="switch-text">
+      Нет аккаунта?
+      <span onclick="switchToRegister()">Зарегистрироваться</span>
+    </p>
+  </div>
+
+  <!-- ===== ОСНОВНОЙ САЙТ ===== -->
+  <div id="site" style="display:none;">
+
+    <header class="header">
+      <h1>Фильмы</h1>
+
+      <div class="header-right">
+        <span id="user-name"></span>
+
+        <button class="logout-btn" onclick="logout()">Выйти</button>
+
+        <div class="cart-icon-header" onclick="showBasket()">
+          <span>🛒</span>
+          <span id="cart-count">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="app">
+      <div id="content" class="movies-grid"></div>
+    </main>
+
+    <footer class="footer">
+      <p>© 2025 My Movie Site</p>
+    </footer>
+
+  </div>
 
   <script src="script.js"></script>
 </body>

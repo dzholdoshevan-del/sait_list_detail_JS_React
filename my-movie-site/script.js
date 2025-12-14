@@ -1,3 +1,59 @@
+/* ===== АВТОРИЗАЦИЯ ===== */
+const auth = document.getElementById("auth");
+const site = document.getElementById("site");
+const userNameEl = document.getElementById("user-name");
+let isRegister = false;
+let currentUser = JSON.parse(localStorage.getItem("currentUser"));
+
+if (currentUser) {
+  auth.style.display = "none";
+  site.style.display = "block";
+  userNameEl.textContent = currentUser.username;
+} else {
+  auth.style.display = "flex";
+}
+
+function switchToRegister() {
+  isRegister = true;
+  document.getElementById("auth-title").innerText = "Регистрация";
+  document.getElementById("switch-text").innerHTML =
+    'Уже есть аккаунт? <span onclick="switchToLogin()">Войти</span>';
+}
+
+function switchToLogin() {
+  isRegister = false;
+  document.getElementById("auth-title").innerText = "Вход";
+  document.getElementById("switch-text").innerHTML =
+    'Нет аккаунта? <span onclick="switchToRegister()">Зарегистрироваться</span>';
+}
+
+function login() {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!username || !password) return alert("Заполните поля");
+
+  const users = JSON.parse(localStorage.getItem("users")) || {};
+
+  if (isRegister) {
+    if (users[username]) return alert("Пользователь существует");
+    users[username] = { password };
+    localStorage.setItem("users", JSON.stringify(users));
+  } else {
+    if (!users[username] || users[username].password !== password)
+      return alert("Неверные данные");
+  }
+
+  localStorage.setItem("currentUser", JSON.stringify({ username }));
+  location.reload();
+}
+
+function logout() {
+  localStorage.removeItem("currentUser");
+  location.reload();
+}
+
+/* ===== ФИЛЬМЫ ===== */
 const movies = [
   { id: 1, title: "Запутанная любовь", year: 2025, description: "«Запутанная любовь» рассказывает историю двух молодых людей, чьи жизни неожиданно переплетаются. Герои сталкиваются с недопониманием, случайными встречами и сложными ситуациями, которые заставляют их пересмотреть свои чувства и решения. Фильм исследует тему дружбы, первой любви, романтических ошибок и того, как важно доверять своим эмоциям даже в самых запутанных обстоятельствах.", img: "https://vsedoramy.ru/uploads/mini/fullstory/9e/75f6bdf9c95b55668d2fc3564b915d.jpg", price: 599 },
   { id: 2, title: "Силачка До Бон Сун", year: 2016, description: "Это история молодой женщины До Бон Сун, обладающей невероятной физической силой. Она старается жить обычной жизнью, но её способности привлекают внимание окружающих и приводят к множеству комичных и трогательных ситуаций. Дорама исследует личностный рост, самоидентификацию, романтические отношения и дружбу, показывая, что сила может быть не только физической, но и эмоциональной.", img: "https://doramy.club/wp-content/uploads/2017/04/silachka-do-bon-sun.jpg", price: 399 },
@@ -22,52 +78,50 @@ const movies = [
 ];
 
 const content = document.getElementById("content");
-let cart = JSON.parse(localStorage.getItem("movieCart")) || [];
+const cartKey = currentUser ? `movieCart_${currentUser.username}` : "movieCart";
+let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
 
 function updateCartCount() {
-  const count = cart.reduce((s, i) => s + i.quantity, 0);
   const el = document.getElementById("cart-count");
-  if (el) el.textContent = count;
+  if (el) el.textContent = cart.reduce((s, i) => s + i.quantity, 0);
 }
 
 function addToCart(id) {
   const movie = movies.find(m => m.id === id);
-  const existing = cart.find(i => i.id === id);
-  if (existing) existing.quantity++;
-  else cart.push({ ...movie, quantity: 1 });
-
-  localStorage.setItem("movieCart", JSON.stringify(cart));
+  const item = cart.find(i => i.id === id);
+  item ? item.quantity++ : cart.push({ ...movie, quantity: 1 });
+  localStorage.setItem(cartKey, JSON.stringify(cart));
   updateCartCount();
   alert(`"${movie.title}" добавлен в корзину!`);
 }
 
 function showList() {
   content.innerHTML = "";
-  movies.forEach(movie => {
+  movies.forEach(m => {
     const card = document.createElement("div");
     card.className = "movie-card";
     card.innerHTML = `
-      <img src="${movie.img}" alt="${movie.title}">
+      <img src="${m.img}" alt="${m.title}">
       <div class="movie-info">
-        <h3>${movie.title}</h3>
-        <p>Год: ${movie.year}</p>
-        <button onclick="event.stopPropagation(); addToCart(${movie.id})">В корзину · ${movie.price} ₽</button>
+        <h3>${m.title}</h3>
+        <p>Год: ${m.year}</p>
+        <button onclick="event.stopPropagation(); addToCart(${m.id})">В корзину · ${m.price} ₽</button>
       </div>
     `;
-    card.onclick = () => showDetail(movie.id);
+    card.onclick = () => showDetail(m.id);
     content.appendChild(card);
   });
 }
 
 function showDetail(id) {
-  const movie = movies.find(m => m.id === id);
+  const m = movies.find(x => x.id === id);
   content.innerHTML = `
     <div class="movie-detail">
-      <h2>${movie.title} (${movie.year})</h2>
-      <img src="${movie.img}" alt="${movie.title}">
-      <p>${movie.description}</p>
-      <button onclick="addToCart(${movie.id})" style="margin:20px 0;padding:12px 24px;background:#ffcc00;color:black;border:none;border-radius:12px;cursor:pointer;font-size:18px;font-weight:bold;">
-        Купить просмотр · ${movie.price} ₽
+      <h2>${m.title} (${m.year})</h2>
+      <img src="${m.img}" alt="${m.title}">
+      <p>${m.description}</p>
+      <button onclick="addToCart(${m.id})" style="margin:20px 0;padding:12px 24px;background:#ffcc00;color:black;border:none;border-radius:12px;cursor:pointer;font-size:18px;font-weight:bold;">
+        Купить просмотр · ${m.price} ₽
       </button>
       <div class="back-button" onclick="showList()">Назад к списку</div>
     </div>
@@ -78,31 +132,26 @@ function showBasket() {
   content.innerHTML = `
     <div class="basket-page">
       <h1 style="text-align:center;color:#ffcc00;margin-bottom:30px;">Моя корзина</h1>
-      ${cart.length === 0 ? `
-        <p style="text-align:center;font-size:20px;">Корзина пуста</p>
-        <div style="text-align:center;margin:30px;">
-          <button onclick="showList()" style="padding:12px 24px;background:#ffcc00;color:black;border:none;border-radius:12px;cursor:pointer;">Перейти к фильмам</button>
-        </div>` : 
-        cart.map(item => `
-          <div class="basket-item">
-            <img src="${item.img}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/90x130/2c2c2c/666?text=Фильм'">
-            <div class="basket-item-info">
-              <h4>${item.title}</h4>
-              <p>${item.year} год · ${item.price} ₽</p>
-              <div class="quantity-controls">
-                <button onclick="changeQuantity(${item.id}, -1)">–</button>
-                <span style="font-size:18px;font-weight:bold;">${item.quantity}</span>
-                <button onclick="changeQuantity(${item.id}, 1)">+</button>
-              </div>
+      ${cart.length === 0 ? `<p style="text-align:center;font-size:20px;">Корзина пуста</p>
+      <div style="text-align:center;margin:30px;">
+        <button onclick="showList()" style="padding:12px 24px;background:#ffcc00;color:black;border:none;border-radius:12px;">Перейти к фильмам</button>
+      </div>` : cart.map(item => `
+        <div class="basket-item">
+          <img src="${item.img}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/90x130/2c2c2c/666?text=Фильм'">
+          <div class="basket-item-info">
+            <h4>${item.title}</h4>
+            <p>${item.year} год · ${item.price} ₽</p>
+            <div class="quantity-controls">
+              <button onclick="changeQuantity(${item.id}, -1)">–</button>
+              <span style="font-size:18px;font-weight:bold;">${item.quantity}</span>
+              <button onclick="changeQuantity(${item.id}, 1)">+</button>
             </div>
-            <button class="remove-btn" onclick="removeFromCart(${item.id})">Удалить</button>
           </div>
-        `).join("")
-      }
-      ${cart.length > 0 ? `
-        <div class="total-price">Итого: ${cart.reduce((s,i)=>s+i.quantity*i.price,0)} ₽</div>
-        <button class="checkout-btn" onclick="createOrder()">Оформить заказ</button>
-      ` : ""}
+          <button class="remove-btn" onclick="removeFromCart(${item.id})">Удалить</button>
+        </div>
+      `).join("")}
+      ${cart.length > 0 ? `<div class="total-price">Итого: ${cart.reduce((s,i)=>s+i.quantity*i.price,0)} ₽</div>
+      <button class="checkout-btn" onclick="createOrder()">Оформить заказ</button>` : ""}
       <div style="text-align:center;margin-top:30px;">
         <div class="back-button" onclick="showList()">Вернуться к фильмам</div>
       </div>
@@ -116,7 +165,7 @@ function changeQuantity(id, delta) {
     item.quantity += delta;
     if (item.quantity <= 0) removeFromCart(id);
     else {
-      localStorage.setItem("movieCart", JSON.stringify(cart));
+      localStorage.setItem(cartKey, JSON.stringify(cart));
       updateCartCount();
       showBasket();
     }
@@ -125,7 +174,7 @@ function changeQuantity(id, delta) {
 
 function removeFromCart(id) {
   cart = cart.filter(i => i.id !== id);
-  localStorage.setItem("movieCart", JSON.stringify(cart));
+  localStorage.setItem(cartKey, JSON.stringify(cart));
   updateCartCount();
   showBasket();
 }
@@ -134,11 +183,13 @@ function createOrder() {
   const total = cart.reduce((s,i)=>s+i.quantity*i.price,0);
   alert(`Заказ оформлен!\n\n${cart.map(i=>`• ${i.title} ×${i.quantity}`).join("\n")}\n\nСумма: ${total} ₽\nСпасибо за покупку!`);
   cart = [];
-  localStorage.setItem("movieCart", JSON.stringify(cart));
+  localStorage.setItem(cartKey, JSON.stringify(cart));
   updateCartCount();
   showList();
 }
 
-// Запуск
-showList();
-updateCartCount();
+/* ===== ЗАПУСК ===== */
+if (currentUser) {
+  showList();
+  updateCartCount();
+}
